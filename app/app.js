@@ -1,38 +1,32 @@
-let components = [];
+let components = [{id: 5}];
 const componentsForm = document.getElementById('components');
 const newComponentForm = document.getElementById('new-component');
 
 function add(target) {
     const parent = target.parentNode;
-    const name = parent.querySelector('[name]').value;
-    const quantity = parent.querySelector('[quantity]').value;
-    const unit = parent.querySelector('[unit]').value;
-
-    if (!(name && typeof name === 'string' && name.length && name.length <= 32)) {
-        console.error('Bad name');
-        return;
-    }
-    if (!(quantity && typeof quantity === 'string')) {
-        console.error('Bad quantity');
-        return;
-    }
-    if (!(unit && ['g', 'l', 'pcs'].includes(unit))) {
-        console.error('Bad unit');
-        return;
-    }
-
     const component = {
-        id: (new Date()).getTime(),
-        name,
-        quantity: parseFloat(quantity),
-        unit
+        id:       (new Date()).getTime(),
+        name:     parent.querySelector('[name]').value,
+        quantity: parseFloat(parent.querySelector('[quantity]').value),
+        unit:     parent.querySelector('[unit]').value
     };
 
-    components.push(component);
+    const validator = new Validator(component);
+    const valid = validator.validate(
+        {
+            id:       [Validator.required, Validator.number, Validator.unique(components)],
+            name:     [Validator.required, Validator.string, Validator.max(32)],
+            quantity: [Validator.required, Validator.number, Validator.min(1)],
+            unit:     [Validator.required, Validator.string, Validator.exists(['g', 'l', 'pcs'])]
+        },
+        errors => errors.length && console.error(errors)
+    );
 
-    componentsForm.innerHTML += build(component);
-    clear();
-
+    if (valid) {
+        components.push(component);
+        componentsForm.innerHTML += build(component);
+        clear();
+    }
 }
 
 function clear() {
